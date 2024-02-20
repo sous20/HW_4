@@ -1,0 +1,268 @@
+---
+title: "Home Work 4"
+author: "Nicholas Nasser (UT EID - nan823)"
+date: "GitHub Repository Link - "
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(ggplot2)
+library(minpack.lm)
+library(mosaic)
+library(kableExtra)
+options(scipen = 999)
+
+gas = read.csv("gasprices.csv")
+
+```
+
+## Problem 1
+
+#### Theory A - Gas Stations Charge More if They Lack Direct Competition in Sight
+
+```{r, fig.align = "center", fig.height = 3, fig.width = 4.5, results = FALSE}
+
+ggplot(gas) + geom_boxplot(aes(x = Competitors, y = Price), fill = "khaki") + labs(title = "Competition in Sight vs. Price of Gas")
+
+sight_boot = do(10000)*diffmean(Price ~ Competitors, data = mosaic::resample(gas))
+
+conf_sight = confint(sight_boot, level = 0.95)
+
+```
+
+*Claim:* The theory that gas stations charge more if they lack direct competition in sight is false.
+
+*Evidence:* I started looking at this theory by plotting gas price as a function of whether or not gas stations were near competition for this specific data set. Based on the box plot shown above, it seems that said theory may be true. Furthermore, gas stations who had no competition near them charged `r round(diffmean(Price ~ Competitors, data = gas), 2) * -1` cents more on average. However, once I created many bootstrap samples to address statistical uncertainty, it appeared that this was not the case. Re-sampling the data set 10,000 times revealed that with a confidence level of 95%, the difference in mean gas prices based on competition for an entire population would range from `r round(conf_sight$lower, 2)` to `r round(conf_sight$upper, 2)` cents. Practically speaking, this range is insignificant because it spans both positive and negative values, indicating no correlation between competition in sight and gas prices. Moreover, the values are so small, that they really wouldn't matter to a normal person.
+
+*Conclusion:* In conclusion, the theory that gas stations charge more if they lack direct competition is not true, as our confidence interval clearly demonstrates.
+
+\newpage
+
+#### Theory B - The Richer the Area, the Higher the Gas Prices
+
+```{r, fig.align = "center", fig.height = 3, fig.width = 4.5, results = FALSE, message = FALSE}
+
+ggplot(gas) + geom_point(aes(x = Income, y = Price)) + geom_smooth(aes(x = Income, y = Price), method = "lm") + labs(title = "Income vs. Price of Gas")
+
+income_boot = do(10000)*lm(Price ~ Income, data = mosaic::resample(gas))
+
+conf_income = confint(income_boot, level = 0.95)
+
+```
+
+*Claim:* The theory that richer areas have higher gas prices is true, but there is a caveat.
+
+*Evidence:* I started looking at this theory by plotting gas price as a function of income for this specific data set. Based on the scatter plot shown above, it seems that the data point to said theory being true. To confirm this, I created many bootstrap samples to address statistical uncertainty. Re-sampling the data set 10,000 times revealed that with a confidence level of 95%, the slope of a linear model representing the relationship between gas price and income for an entire population would range from `r conf_income$lower[2]` to `r conf_income$upper[2]` cents. An exact estimate derived from this interval is `r conf_income$estimate[2]` cents. Statistically speaking, this range is significant, and it demonstrates a positive correlation between income and gas prices for a theoretical population. The only caveat is that the correlation is extremely small, rendering our estimate of the effect size practically insignificant.
+
+*Conclusion:* In conclusion, the theory that richer areas have higher gas prices is true, but the association between the two can be considered insignificant to the average person.
+
+\newpage
+
+#### Theory C - Gas Stations at Stoplights Charge More
+
+```{r, fig.align = "center", fig.height = 3, fig.width = 4.5, results = FALSE, message = FALSE}
+
+ggplot(gas) + geom_boxplot(aes(x = Stoplight, y = Price), fill = "khaki") + labs(title = "Stoplights vs. Price of Gas")
+
+stop_boot = do(10000)*diffmean(Price ~ Stoplight, data = mosaic::resample(gas))
+
+conf_stop = confint(stop_boot, level = 0.95)
+
+```
+
+*Claim:* The theory that gas stations at stoplights charge more is false.
+
+*Evidence:* I started looking at this theory by plotting gas price as a function of whether or not gas stations were near stoplights for this specific data set. Based on the box plot shown above, it seems that said theory may be true. However, gas stations near stoplights charged `r round(diffmean(Price ~ Stoplight, data = gas), 2 * -1)` cents less on average. In order to address uncertainty and distinguish between these conflicting ideas, I created many bootstrap samples. Re-sampling the data set 10,000 times revealed that with a confidence level of 95%, the difference in mean gas prices based on stoplights for an entire population would range from `r round(conf_stop$lower, 2)` to `r round(conf_stop$upper, 2)` cents. Practically speaking, this range is insignificant because it spans both positive and negative values, indicating no correlation between competition in stoplight existence and gas prices. Moreover, the values are so small, that they really wouldn't matter to a normal person.
+
+*Conclusion:* In conclusion, the theory that gas stations at stoplights charge more is not true, as our confidence interval clearly demonstrates.
+
+\newpage
+
+#### Theory D - Gas Stations with Direct Highway Access Charge More
+
+```{r, fig.align = "center", fig.height = 3, fig.width = 4.5, results = FALSE, message = FALSE}
+
+ggplot(gas) + geom_boxplot(aes(x = Highway, y = Price), fill = "khaki") + labs(title = "Highways vs. Price of Gas")
+
+high_boot = do(10000)*diffmean(Price ~ Highway, data = mosaic::resample(gas))
+
+conf_high = confint(high_boot, level = 0.95)
+
+```
+
+*Claim:* The theory that gas stations with direct highway access charge more is true.
+
+*Evidence:* I started looking at this theory by plotting gas price as a function of whether or not gas stations were near highways for this specific data set. Based on the box plot shown above, it seems that said theory may be true. Furthermore, gas stations who had highways near them charged `r round(diffmean(Price ~ Highway, data = gas), 2)` cents more on average. Once I created many bootstrap samples to address statistical uncertainty, it appeared that the theory was in fact true. Re-sampling the data set 10,000 times revealed that with a confidence level of 95%, the difference in mean gas prices based on proximity to highways for an entire population would range from `r round(conf_high$lower, 2)` to `r round(conf_high$upper, 2)` cents. An exact estimate derived from this interval is `r round(conf_high$estimate, 2)` cents. Statistically speaking, this range is significant, and it demonstrates that gas stations near high ways charge more even when generalized to an entire theoretical population.
+
+*Conclusion:* In conclusion, the theory that gas stations with highway access charge more is true, as our confidence interval clearly demonstrates.
+
+\newpage
+
+#### Theory E - Shell Charges More Than All Other Non-Shell Brands
+
+```{r, fig.align = "center", fig.height = 3, fig.width = 4.5, results = FALSE, message = FALSE}
+
+gas_shell = mutate(gas, shell = Brand == "Shell")
+
+ggplot(gas_shell) + geom_boxplot(aes(x = shell, y = Price), fill = "khaki") + labs(title = "Shell vs. Price of Gas")
+
+shell_boot = do(10000)*diffmean(Price ~ shell, data = mosaic::resample(gas_shell))
+
+conf_shell = confint(shell_boot, level = 0.95)
+
+```
+
+*Claim:* The theory that Shell charges more than other gas stations is False.
+
+*Evidence:* I started looking at this theory by plotting gas price as a function of whether or not the gas stations were owned by shell for this specific data set. Based on the box plot shown above, it seems that said theory may be true. Furthermore, gas stations who were owned by Shell charged `r round(diffmean(Price ~ shell, data = gas_shell), 2)` cents more on average. However, once I created many bootstrap samples to address statistical uncertainty, it appeared that this was not the case. Re-sampling the data set 10,000 times revealed that with a confidence level of 95%, the difference in mean gas prices based on Shell ownership for an entire population would range from `r round(conf_shell$lower, 2)` to `r round(conf_shell$upper, 2)` cents. Practically speaking, this range is insignificant because it spans both positive and negative values, indicating no correlation between Shell ownership and gas prices.
+
+*Conclusion:* In conclusion, the theory that gas stations owned by Shell charge more is false, as our confidence interval clearly demonstrates.
+
+\newpage
+
+## Problem 2
+
+#### Part A
+
+```{r}
+
+sclass = read.csv("sclass.csv")
+
+sclass_new = filter(sclass, year == 2011 & trim == "63 AMG")
+
+amg2011_boot = do(10000)*mean(~mileage, data = mosaic::resample(sclass_new))
+
+conf_amg2011 = confint(amg2011_boot, level = 0.95)
+
+```
+
+Using the bootstrapping technique, we can say with 95% confidence that a 2011 Mercedes S-Class with the "63 AMG" trim will have an average of between `r round(conf_amg2011$lower, 0)` and `r round(conf_amg2011$upper, 0)` miles.
+
+#### Part B
+
+```{r}
+
+sclass_black = mutate(sclass, is_black = color == "Black")
+
+sclass_b550 = filter(sclass_black, year == 2014 & trim == "550")
+
+prop_boot = do(10000)*prop(~is_black, data = mosaic::resample(sclass_b550))
+
+conf_prop = confint(prop_boot, level = 0.95)
+
+```
+
+Using the bootstrapping technique, we can say with 95% confidence that the proportion of 2014 Mercedes S-Class cars with the "550" trim that are black will be between `r round(conf_prop$lower, 2)` and `r round(conf_prop$upper, 2)`.
+
+## Problem 3
+
+#### Part A
+
+```{r}
+
+nbc = read.csv("nbc_pilotsurvey.csv")
+
+ed_earl = filter(nbc, Show == "Living with Ed" | Show == "My Name is Earl")
+
+ed_earl_boot = do(10000)*diffmean(Q1_Happy ~ Show, data = mosaic::resample(ed_earl))
+
+conf_ed_earl = confint(ed_earl_boot, level = 0.95)
+
+```
+
+&nbsp;
+
+Question: Is there evidence that either "Living with Ed" or "My Name is Earl" produce a higher mean happiness response among viewers?
+
+Approach: I filtered the initial data set to only include these two shows, and then took a bootstrap of the difference in average happiness using the diffmean function.
+
+Results: We can say with 95% confidence that the difference between average happiness scores for each of the two shows falls between `r round(conf_ed_earl$lower, 2)` and `r round(conf_ed_earl$upper, 2)`
+
+Conclusion: When looking at the confidence interval, it is clear that there is no way to tell which show makes people happier since the lower value is negative and the upper value is positive. This essentially indicates that in some instances it is possible for one show to make more people happy, while in other instances it is possible for the opposite to occur.
+
+#### Part B
+
+```{r}
+
+loser_app = filter(nbc, Show == "The Biggest Loser" | Show == "The Apprentice: Los Angeles")
+
+loser_app_boot = do(10000)*diffmean(Q1_Annoyed ~ Show, data = mosaic::resample(loser_app))
+
+conf_loser_app = confint(loser_app_boot, level = 0.95)
+
+```
+
+&nbsp;
+
+Question: Is there evidence that "The Biggest Loser" or "The Apprentice: Los Angeles" consistently produces a higher average annoyed response among viewers?
+
+Approach: I filtered the initial data set to only include these two shows, and then took a bootstrap of the difference in average annoyance using the diffmean function.
+
+Results: We can say with 95% confidence that the difference between average annoyance scores for each of the two shows falls between `r round(conf_loser_app$lower, 2)` and `r round(conf_loser_app$upper, 2)`
+
+Conclusion: When looking at the confidence interval, it is clear that the apprentice will cause viewers to get more annoyed on average than the biggest loser will. This is because no matter where we are on our confidence interval, the difference in mean is negative.
+
+#### Part C
+
+```{r}
+
+dance = filter(nbc, Show == "Dancing with the Stars")
+
+dance = mutate(dance, confused = Q2_Confusing >= 4)
+
+dance_prop_boot = do(10000)*prop(~confused, data = mosaic::resample(dance))
+
+conf_dance = confint(dance_prop_boot, level = 0.95)
+
+```
+
+&nbsp;
+
+Question: What proportion of American TV watchers would we expect to give a response of 4 or greater for being confused while watching "Dancing with the Stars"?
+
+Approach: First, I filtered out all shows from the original data set except "Dancing with the Stars". Then, I made a new column in the filtered data set that allows us to differentiate between scores that are greater than or equal to 4 and scores that are less than or equal to 3. Finally, I created bootstrap samples of the proportion of people who were confused at a level of 4 or higher using the prop function.
+
+Results: We can say with 95% confidence that the expected proportion of confusion greater than or equal to a score of 4 among all American TV viewers will be between between `r round(conf_dance$lower, 2)` and `r round(conf_dance$upper, 2)`
+
+Conclusion: Based on our confidence interval, we can conclude that most American viewers who watch dancing with the stars will not be confused or very confused; only a small proportion of viewers will be significantly confused.
+
+\newpage
+
+## Problem 4
+
+```{r}
+
+ebay = read.csv("ebay.csv")
+
+ebay_boot = do(10000)*diffmean(rev_ratio ~ adwords_pause, data = mosaic::resample(ebay))
+
+conf_ebay = confint(ebay_boot, level = 0.95)
+
+```
+
+&nbsp;
+
+Question: Are the revenue ratios for the treatment and control groups the same, or are they different in a way that demonstrates that ads generate revenue for Ebay?
+
+Approach: I took bootstrap samples of the difference in the means of revenue ratios for locations in both the treatment and control groups using the diffmean function.
+
+Results: We now have a 95% confidence interval ranging from `r round(conf_ebay$lower, 2)` to `r round(conf_ebay$upper, 2)`.
+
+Conclusion: We can say with 95% confidence that the mean of all treatment groups' revenue ratios will be lower than the mean of all control groups' revenue ratios by a value contained within our confidence interval mentioned previously. We know this because both the upper and lower values of the interval are negative. This demonstrates that regions where the paid ads were shut off caused overall losses in revenue for ebay.
+
+
+
+
+
+
+
+
+
+
+
+
+
